@@ -85,9 +85,6 @@
           cfg = config.hardware.rockpi-quad;
         in
         {
-          imports = [
-            nixos-hardware.nixosModules.raspberry-pi-4
-          ];
 
           options.hardware.rockpi-quad = {
             enable = lib.mkEnableOption "Enable the Rockpi Quad SATA Hat service";
@@ -132,9 +129,6 @@
 
           config = lib.mkIf cfg.enable {
             environment.systemPackages = [ cfg.package pkgs.python3 ];
-
-            hardware.raspberry-pi."4".i2c1.enable = true;
-            hardware.raspberry-pi."4".pwm.enable = true;
 
             users.groups.gpio = lib.mkDefault {};
             users.groups.${cfg.group} = {};
