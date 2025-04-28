@@ -16,6 +16,48 @@
       py3 = pkgs.python3;
       pythonPackages = py3.pkgs;
 
+
+      #########################################################################
+      # MANUAL BUILDS
+      #########################################################################
+
+      # Define Adafruit-Blinka manually since it's not found
+      # Version from your requirements.txt: 8.39.0
+      adafruit-blinka = pythonPackages.buildPythonPackage rec {
+        pname = "Adafruit-Blinka";
+        version = "8.39.0";
+
+        src = pkgs.fetchPypi {
+          inherit pname version;
+          # IMPORTANT: Replace fakeSha256 with the actual hash.
+          # Build once, Nix will error and tell you the expected hash.
+          # Copy that hash here.
+          sha256 = lib.fakeSha256;
+          # Or leave it empty like: sha256 = "";
+        };
+
+        # Dependencies of Adafruit-Blinka (ensure these are available)
+        propagatedBuildInputs = with pythonPackages; [
+          adafruit-platformdetect # Already in pythonDeps below
+          adafruit-pureio       # Already in pythonDeps below
+          pyftdi                # Already in pythonDeps below
+          pyserial              # Already in pythonDeps below
+          sysv-ipc              # Already in pythonDeps below
+          raspberrypilib        # Already in pythonDeps below (for RPi.GPIO)
+          # Add any other direct dependencies if needed
+        ];
+
+        # Blinka is primarily a library
+        doCheck = false;
+
+        meta = {
+          description = "CircuitPython APIs for non-CircuitPython versions of Python";
+          homepage = "https://github.com/adafruit/Adafruit_Blinka";
+          license = lib.licenses.mit;
+        };
+      };
+
+      #########################################################################
       # Define Python dependencies based on requirements.txt
       pythonDeps = with pythonPackages; [
         adafruit-blinka
