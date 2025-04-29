@@ -9,7 +9,7 @@
 
   outputs = { self, nixpkgs, system, nixos-hardware }:
     let
-
+      system = "aarch64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
       lib = pkgs.lib;
 
