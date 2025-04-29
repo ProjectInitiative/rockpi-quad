@@ -13,41 +13,33 @@
       pkgs = nixpkgs.legacyPackages.${system};
       lib = pkgs.lib;
 
-      # Load the overlay function from pip2nix output
-      pythonOverlay = pkgs.callPackage ./python-packages.nix {
-         inherit (pkgs) fetchurl fetchgit fetchhg;
-       };
+      packageOverrides = pkgs.callPackage ./python-packages.nix {};
+      python = pkgs.python3.override { inherit packageOverrides; };
 
-      # Create a new Python interpreter derivation with the overlay applied
-      # This is often more robust against recursion than overrideScope'
-      pythonWithOverriddenPackages = pkgs.python3.override {
-        packageOverrides = pythonOverlay;
-      };
-
-      # Get the final package set from this overridden Python interpreter
-      finalPythonPackages = pythonWithOverriddenPackages.pkgs;
 
       # Define Python dependencies as a list using the final package set
       pythonDeps = [
-        finalPythonPackages."Adafruit-Blinka"
-        finalPythonPackages."adafruit-circuitpython-busdevice"
-        finalPythonPackages."adafruit-circuitpython-connectionmanager"
-        finalPythonPackages."adafruit-circuitpython-framebuf"
-        finalPythonPackages."adafruit-circuitpython-requests"
-        finalPythonPackages."adafruit-circuitpython-ssd1306"
-        finalPythonPackages."adafruit-circuitpython-typing"
-        finalPythonPackages."Adafruit-PlatformDetect"
-        finalPythonPackages."Adafruit-PureIO"
-        finalPythonPackages.libgpiod # Assuming from base nixpkgs
-        finalPythonPackages.pillow # Assuming from base nixpkgs
-        finalPythonPackages.psutil # Assuming from base nixpkgs
-        finalPythonPackages."pyftdi"
-        finalPythonPackages."pyserial"
-        finalPythonPackages.python-periphery # Assuming from base nixpkgs
-        finalPythonPackages."pyusb"
-        finalPythonPackages.raspberrypilib # Assuming from base nixpkgs
-        finalPythonPackages.spidev # Assuming from base nixpkgs
-        finalPythonPackages.sysv-ipc # Assuming from base nixpkgs
+      (python.withPackages(p: [
+          p.Adafruit-Blinka
+          p.adafruit-circuitpython-busdevice
+          p.adafruit-circuitpython-connectionmanager
+          p.adafruit-circuitpython-framebuf
+          p.adafruit-circuitpython-requests
+          p.adafruit-circuitpython-ssd1306
+          p.adafruit-circuitpython-typing
+          p.Adafruit-PlatformDetect
+          p.Adafruit-PureIO
+          p.libgpiod # Assuming from base nixpkgs
+          p.pillow # Assuming from base nixpkgs
+          p.psutil # Assuming from base nixpkgs
+          p.pyftdi
+          p.pyserial
+          p.python-periphery # Assuming from base nixpkgs
+          p.pyusb
+          p.raspberrypilib # Assuming from base nixpkgs
+          p.spidev # Assuming from base nixpkgs
+          p.sysv-ipc # Assuming from base nixpkgs
+        ]))
       ];
 
       # Main package derivation
