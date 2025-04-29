@@ -144,6 +144,9 @@
               SUBSYSTEM=="bcm2835-gpiomem", KERNEL=="gpiomem", GROUP="${cfg.group}", MODE="0660"
               SUBSYSTEM=="gpio", KERNEL=="gpiochip*", ACTION=="add", RUN+="${pkgs.bash}/bin/bash -c 'chown root:${cfg.group} /sys/class/gpio/export /sys/class/gpio/unexport ; chmod 220 /sys/class/gpio/export /sys/class/gpio/unexport'"
               SUBSYSTEM=="gpio", KERNEL=="gpio*", ACTION=="add", RUN+="${pkgs.bash}/bin/bash -c 'chown root:${cfg.group} /sys/%p/active_low /sys/%p/direction /sys/%p/edge /sys/%p/value ; chmod 660 /sys/%p/active_low /sys/%p/direction /sys/%p/edge /sys%p/value'"
+
+                # Add this rule for /dev/gpiochip devices:
+              SUBSYSTEM=="gpio", KERNEL=="gpiochip*", GROUP="gpio", MODE="0660"
             '';
 
             environment.etc."rockpi-quad.conf" = {
@@ -169,8 +172,10 @@
               after = [ "network.target" ];
 
               serviceConfig = {
-                User = cfg.user;
-                Group = cfg.group;
+                # User = cfg.user;
+                # Group = cfg.group;
+                User = "root";  # Add this line
+                Group = "root"; # Add this line
                 ExecStart = "${pkgs.bash}/bin/bash ${cfg.package}/bin/rockpi-quad/main.py";
                 KillSignal = "SIGINT";
                 EnvironmentFile = "/etc/rockpi-quad.env";
