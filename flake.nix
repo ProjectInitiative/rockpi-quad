@@ -29,16 +29,15 @@
           p.adafruit-circuitpython-typing
           p.Adafruit-PlatformDetect
           p.Adafruit-PureIO
-          p.libgpiod # Assuming from base nixpkgs
-          p.pillow # Assuming from base nixpkgs
-          p.psutil # Assuming from base nixpkgs
+          p.libgpiod 
+          p.pillow
+          p.psutil 
           p.pyftdi
           p.pyserial
-          p.python-periphery # Assuming from base nixpkgs
+          p.python-periphery
           p.pyusb
-          p.raspberrypilib # Assuming from base nixpkgs
-          p.spidev # Assuming from base nixpkgs
-          p.sysv-ipc # Assuming from base nixpkgs
+          p.spidev
+          p.sysv-ipc
         ]))
       ];
 
