@@ -67,7 +67,7 @@
             --replace "'/etc/rockpi-penta.conf'" "'/etc/rockpi-quad.conf'"
 
           chmod +x $install_dir/main.py
-          patchShebangs $install_dir
+          # patchShebangs $install_dir
 
           runHook postInstall
         '';
