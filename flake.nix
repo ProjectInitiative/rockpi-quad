@@ -60,8 +60,8 @@
           mkdir -p $install_dir $out/etc $out/share/fonts/rockpi-quad
 
           cp -r $src/rockpi-quad/usr/bin/rockpi-quad/* $install_dir/
-          cp $src/rockpi-quad/etc/rockpi-quad.conf.txt $out/etc/rockpi-quad.conf.default
-          cp $src/rockpi-quad/usr/bin/rockpi-quad/env/rpi4.env.txt $out/etc/rockpi-quad.env.rpi4
+          cp $src/rockpi-quad/etc/rockpi-quad.conf $out/etc/rockpi-quad.conf.default
+          cp $src/rockpi-quad/usr/bin/rockpi-quad/env/rpi4.env $out/etc/rockpi-quad.env.rpi4
 
           substituteInPlace $install_dir/misc.py \
             --replace "'/etc/rockpi-penta.conf'" "'/etc/rockpi-quad.conf'"
