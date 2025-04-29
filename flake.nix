@@ -29,15 +29,15 @@
           p.adafruit-circuitpython-typing
           p.Adafruit-PlatformDetect
           p.Adafruit-PureIO
-          p.libgpiod 
-          p.pillow
-          p.psutil 
+          # p.libgpiod 
+          # p.pillow
           p.pyftdi
           p.pyserial
-          p.python-periphery
+          # p.python-periphery
           p.pyusb
-          p.spidev
-          p.sysv-ipc
+          # p.spidev
+          # p.sysv-ipc
+          p.typing-extensions
         ]))
       ];
 
