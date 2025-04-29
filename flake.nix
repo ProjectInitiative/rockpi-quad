@@ -24,15 +24,15 @@
       # Define Python dependencies based on requirements.txt
       pythonDeps = [
         (py3.withPackages(p: with p; [
-          adafruit-blinka
+          Adafruit-Blinka
           adafruit-circuitpython-busdevice
           adafruit-circuitpython-connectionmanager
           adafruit-circuitpython-framebuf
           adafruit-circuitpython-requests
           adafruit-circuitpython-ssd1306
           adafruit-circuitpython-typing
-          adafruit-platformdetect
-          adafruit-pureio
+          Adafruit-PlatformDetect
+          Adafruit-PureIO
           libgpiod # Provides the python bindings
           pillow
           psutil
