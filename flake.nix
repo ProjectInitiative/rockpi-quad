@@ -7,43 +7,48 @@
     # flake-utils is removed
   };
 
-  outputs = { self, nixpkgs, nixos-hardware }:
+  outputs = { self, nixpkgs, system, nixos-hardware }:
     let
 
-      packageOverrides = pkgs.callPackage ./python-packages.nix;
-      python = pkgs.python3.override { inherit packageOverrides; };
-      
-      # Define the target system directly
-      system = "aarch64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
-      lib = pkgs.lib; # Use lib from pkgs for the target system
-      py3 = pkgs.python3;
-      pythonPackages = py3.pkgs;
+      lib = pkgs.lib;
 
+      # Get the standard python packages set
+      pythonPackages = pkgs.python3Packages;
 
-      # Define Python dependencies based on requirements.txt
+      # Load the overlay function from pip2nix output
+      # Pass the fetchers it requires as arguments
+      pythonOverlay = pkgs.callPackage ./python-packages.nix {
+         inherit (pkgs) fetchurl fetchgit fetchhg;
+       };
+
+      # Apply the overlay function to the standard package set
+      finalPythonPackages = pythonPackages.overrideScope' pythonOverlay;
+
+      # Define Python dependencies *as a list*, accessing packages from the final set
+      # Use quoted attribute access for names defined in python-packages.nix
       pythonDeps = [
-        (py3.withPackages(p: with p; [
-          Adafruit-Blinka
-          adafruit-circuitpython-busdevice
-          adafruit-circuitpython-connectionmanager
-          adafruit-circuitpython-framebuf
-          adafruit-circuitpython-requests
-          adafruit-circuitpython-ssd1306
-          adafruit-circuitpython-typing
-          Adafruit-PlatformDetect
-          Adafruit-PureIO
-          libgpiod # Provides the python bindings
-          pillow
-          psutil
-          pyftdi
-          pyserial
-          python-periphery
-          pyusb
-          raspberrypilib # For RPi.GPIO
-          spidev
-          sysv-ipc
-        ]))
+        finalPythonPackages."Adafruit-Blinka" # Defined in overlay
+        finalPythonPackages."adafruit-circuitpython-busdevice" # Defined in overlay
+        finalPythonPackages."adafruit-circuitpython-connectionmanager" # Defined in overlay
+        finalPythonPackages."adafruit-circuitpython-framebuf" # Defined in overlay
+        finalPythonPackages."adafruit-circuitpython-requests" # Defined in overlay
+        finalPythonPackages."adafruit-circuitpython-ssd1306" # Defined in overlay
+        finalPythonPackages."adafruit-circuitpython-typing" # Defined in overlay
+        finalPythonPackages."Adafruit-PlatformDetect" # Defined in overlay
+        finalPythonPackages."Adafruit-PureIO" # Defined in overlay
+        finalPythonPackages.libgpiod # Use standard name (comes from nixpkgs via 'super')
+        finalPythonPackages.pillow # Use standard name (comes from nixpkgs via 'super')
+        finalPythonPackages.psutil # Use standard name (comes from nixpkgs via 'super')
+        finalPythonPackages."pyftdi" # Defined in overlay
+        finalPythonPackages."pyserial" # Defined in overlay
+        finalPythonPackages.python-periphery # Use standard name (comes from nixpkgs via 'super')
+        finalPythonPackages."pyusb" # Defined in overlay
+        finalPythonPackages.raspberrypilib # Use standard name (comes from nixpkgs via 'super')
+        finalPythonPackages.spidev # Use standard name (comes from nixpkgs via 'super')
+        finalPythonPackages.sysv-ipc # Use standard name (comes from nixpkgs via 'super')
+        # Ensure all direct dependencies listed in requirements.txt are included here
+        # using the correct attribute name from finalPythonPackages.
       ];
 
       # Main package derivation
