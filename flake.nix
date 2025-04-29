@@ -13,46 +13,45 @@
       pkgs = nixpkgs.legacyPackages.${system};
       lib = pkgs.lib;
 
-      # Get the standard python packages set
-      pythonPackages = pkgs.python3Packages;
-
       # Load the overlay function from pip2nix output
-      # Pass the fetchers it requires as arguments
       pythonOverlay = pkgs.callPackage ./python-packages.nix {
          inherit (pkgs) fetchurl fetchgit fetchhg;
        };
 
-      # Apply the overlay function to the standard package set
-      finalPythonPackages = pythonPackages.overrideScope pythonOverlay;
+      # Create a new Python interpreter derivation with the overlay applied
+      # This is often more robust against recursion than overrideScope'
+      pythonWithOverriddenPackages = pkgs.python3.override {
+        packageOverrides = pythonOverlay;
+      };
 
-      # Define Python dependencies *as a list*, accessing packages from the final set
-      # Use quoted attribute access for names defined in python-packages.nix
+      # Get the final package set from this overridden Python interpreter
+      finalPythonPackages = pythonWithOverriddenPackages.pkgs;
+
+      # Define Python dependencies as a list using the final package set
       pythonDeps = [
-        finalPythonPackages."Adafruit-Blinka" # Defined in overlay
-        finalPythonPackages."adafruit-circuitpython-busdevice" # Defined in overlay
-        finalPythonPackages."adafruit-circuitpython-connectionmanager" # Defined in overlay
-        finalPythonPackages."adafruit-circuitpython-framebuf" # Defined in overlay
-        finalPythonPackages."adafruit-circuitpython-requests" # Defined in overlay
-        finalPythonPackages."adafruit-circuitpython-ssd1306" # Defined in overlay
-        finalPythonPackages."adafruit-circuitpython-typing" # Defined in overlay
-        finalPythonPackages."Adafruit-PlatformDetect" # Defined in overlay
-        finalPythonPackages."Adafruit-PureIO" # Defined in overlay
-        finalPythonPackages.libgpiod # Use standard name (comes from nixpkgs via 'super')
-        finalPythonPackages.pillow # Use standard name (comes from nixpkgs via 'super')
-        finalPythonPackages.psutil # Use standard name (comes from nixpkgs via 'super')
-        finalPythonPackages."pyftdi" # Defined in overlay
-        finalPythonPackages."pyserial" # Defined in overlay
-        finalPythonPackages.python-periphery # Use standard name (comes from nixpkgs via 'super')
-        finalPythonPackages."pyusb" # Defined in overlay
-        finalPythonPackages.raspberrypilib # Use standard name (comes from nixpkgs via 'super')
-        finalPythonPackages.spidev # Use standard name (comes from nixpkgs via 'super')
-        finalPythonPackages.sysv-ipc # Use standard name (comes from nixpkgs via 'super')
-        # Ensure all direct dependencies listed in requirements.txt are included here
-        # using the correct attribute name from finalPythonPackages.
+        finalPythonPackages."Adafruit-Blinka"
+        finalPythonPackages."adafruit-circuitpython-busdevice"
+        finalPythonPackages."adafruit-circuitpython-connectionmanager"
+        finalPythonPackages."adafruit-circuitpython-framebuf"
+        finalPythonPackages."adafruit-circuitpython-requests"
+        finalPythonPackages."adafruit-circuitpython-ssd1306"
+        finalPythonPackages."adafruit-circuitpython-typing"
+        finalPythonPackages."Adafruit-PlatformDetect"
+        finalPythonPackages."Adafruit-PureIO"
+        finalPythonPackages.libgpiod # Assuming from base nixpkgs
+        finalPythonPackages.pillow # Assuming from base nixpkgs
+        finalPythonPackages.psutil # Assuming from base nixpkgs
+        finalPythonPackages."pyftdi"
+        finalPythonPackages."pyserial"
+        finalPythonPackages.python-periphery # Assuming from base nixpkgs
+        finalPythonPackages."pyusb"
+        finalPythonPackages.raspberrypilib # Assuming from base nixpkgs
+        finalPythonPackages.spidev # Assuming from base nixpkgs
+        finalPythonPackages.sysv-ipc # Assuming from base nixpkgs
       ];
 
       # Main package derivation
-      rockpi-quad-pkg = pythonPackages.buildPythonApplication {
+      rockpi-quad-pkg = pkgs.python3Packages.buildPythonApplication {
         pname = "rockpi-quad";
         version = "0.3.1";
 
