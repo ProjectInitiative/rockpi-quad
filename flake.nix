@@ -23,7 +23,7 @@
        };
 
       # Apply the overlay function to the standard package set
-      finalPythonPackages = pythonPackages.overrideScope' pythonOverlay;
+      finalPythonPackages = pythonPackages.overrideScope pythonOverlay;
 
       # Define Python dependencies *as a list*, accessing packages from the final set
       # Use quoted attribute access for names defined in python-packages.nix
