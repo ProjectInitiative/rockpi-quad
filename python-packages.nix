@@ -19,7 +19,7 @@ self: super: {
     propagatedBuildInputs = [
       self."Adafruit-PlatformDetect"
       self."Adafruit-PureIO"
-      self."adafruit-circuitpython-typing"
+      # self."adafruit-circuitpython-typing"
       self."pyftdi"
     ];
   };
@@ -64,8 +64,8 @@ self: super: {
     checkInputs = [];
     nativeBuildInputs = [];
     propagatedBuildInputs = [
-      self."Adafruit-Blinka"
-      self."adafruit-circuitpython-typing"
+      # self."Adafruit-Blinka"
+      # self."adafruit-circuitpython-typing"
     ];
   };
   "adafruit-circuitpython-connectionmanager" = super.buildPythonPackage rec {
@@ -148,8 +148,8 @@ self: super: {
     checkInputs = [];
     nativeBuildInputs = [];
     propagatedBuildInputs = [
-      self."Adafruit-Blinka"
-      self."adafruit-circuitpython-busdevice"
+      # self."Adafruit-Blinka"
+      # self."adafruit-circuitpython-busdevice"
       self."adafruit-circuitpython-requests"
       self."typing-extensions"
     ];
