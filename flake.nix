@@ -29,7 +29,7 @@
           p.adafruit-circuitpython-typing
           p.Adafruit-PlatformDetect
           p.Adafruit-PureIO
-          # p.libgpiod 
+          p.libgpiod 
           # p.pillow
           p.pyftdi
           p.pyserial
