@@ -7,7 +7,7 @@
     # flake-utils is removed
   };
 
-  outputs = { self, nixpkgs, system, nixos-hardware }:
+  outputs = { self, nixpkgs,  nixos-hardware }:
     let
       system = "aarch64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
