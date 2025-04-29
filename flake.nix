@@ -22,7 +22,7 @@
 
 
       # Define Python dependencies based on requirements.txt
-      pythonDeps = py3.withPackages(p: with p; [
+      pythonDeps = (py3.withPackages(p: with p; [
         adafruit-blinka
         adafruit-circuitpython-busdevice
         adafruit-circuitpython-connectionmanager
@@ -42,7 +42,7 @@
         raspberrypilib # For RPi.GPIO
         spidev
         sysv-ipc
-      ]);
+      ]));
 
       # Main package derivation
       rockpi-quad-pkg = pythonPackages.buildPythonApplication {
