@@ -67,7 +67,7 @@
             --replace "'/etc/rockpi-penta.conf'" "'/etc/rockpi-quad.conf'"
 
           chmod +x $install_dir/main.py
-          # patchShebangs $install_dir
+          patchShebangs $install_dir
 
           runHook postInstall
         '';
@@ -171,7 +171,7 @@
               serviceConfig = {
                 User = cfg.user;
                 Group = cfg.group;
-                ExecStart = "${pkgs.python3}/bin/python3 ${cfg.package}/bin/rockpi-quad/main.py";
+                ExecStart = "${pkgs.bash}/bin/bash ${cfg.package}/bin/rockpi-quad/main.py";
                 KillSignal = "SIGINT";
                 EnvironmentFile = "/etc/rockpi-quad.env";
                 Restart = "on-failure";
