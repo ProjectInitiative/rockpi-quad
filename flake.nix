@@ -193,5 +193,23 @@
 
       # Add legacyPackages for convenience if needed by non-flake tooling
       legacyPackages.${system}.rockpi-quad = rockpi-quad-pkg;
+
+            # Add this devShells output
+      devShells.${system}.default = pkgs.mkShell {
+        # Inherit build inputs from the package definition
+        nativeBuildInputs = rockpi-quad-pkg.nativeBuildInputs;
+        
+        # Include the core Python environment with dependencies
+        packages = pythonDeps ++ [ 
+                     pkgs.git # Add git to clone the repo
+                     # Add any other tools you might need, e.g.:
+                     # pkgs.python3Packages.pip 
+                   ];
+
+        # Optional: Set environment variables if needed for testing
+        # shellHook = ''
+        #  export YOUR_ENV_VAR="some_value"
+        # '';
+      };
     };
 }
