@@ -7,6 +7,7 @@ import multiprocessing as mp
 import traceback
 
 import gpiod
+from gpiod.line import Direction, Value, Bias # <-- ADD THIS LINE
 from configparser import ConfigParser
 from collections import defaultdict, OrderedDict
 
@@ -53,7 +54,8 @@ def read_conf():
 
     try:
         cfg = ConfigParser()
-        cfg.read('/etc/rockpi-penta.conf')
+        cfg.read('/home/kylepzak/rockpi-quad/rockpi-quad/etc/rockpi-quad.conf')
+        # cfg.read('/etc/rockpi-penta.conf')
         # fan
         conf['fan']['lv0'] = cfg.getfloat('fan', 'lv0')
         conf['fan']['lv1'] = cfg.getfloat('fan', 'lv1')
@@ -95,21 +97,28 @@ def read_conf():
 
 
 def read_key(pattern, size):
-    CHIP_NAME = os.environ['BUTTON_CHIP']
-    LINE_NUMBER = os.environ['BUTTON_LINE']
+    chip_num = os.environ['BUTTON_CHIP']
+    chip_path = f'/dev/gpiochip{chip_num}'
+    line_num = int(os.environ['BUTTON_LINE'])
 
     s = ''
-    chip = gpiod.Chip(str(CHIP_NAME))
-    line = chip.get_line(int(LINE_NUMBER))
-    line.request(consumer='hat_button', type=gpiod.LINE_REQ_DIR_OUT)
-    line.set_value(1)
-
-    while True:
-        s = s[-size:] + str(line.get_value())
-        for t, p in pattern.items():
-            if p.match(s):
-                return t
-        time.sleep(0.1)
+    config = {
+        line_num: gpiod.LineSettings(
+            direction=Direction.INPUT,
+            bias=Bias.PULL_UP,
+            active_low=True
+        )
+    }
+    # The 'with' statement handles the lifetime of the request.
+    with gpiod.request_lines(chip_path, consumer='hat-button', config=config) as request:
+        while True:
+            value = request.get_value(line_num)
+            # The regex expects a string of '1's and '0's.
+            s = s[-size:] + str(int(value))
+            for t, p in pattern.items():
+                if p.match(s):
+                    return t
+            time.sleep(0.1)
 
 
 def watch_key(q=None):
@@ -164,13 +173,31 @@ def get_func(key):
 
 
 def disk_turn_on():
-    line1 = gpiod.Chip(os.environ['SATA_CHIP']).get_line(int(os.environ['SATA_LINE_1']))
-    line1.request(consumer='SATA_LINE_1', type=gpiod.LINE_REQ_DIR_OUT)
-    line1.set_value(1)
-    line2 = gpiod.Chip(os.environ['SATA_CHIP']).get_line(int(os.environ['SATA_LINE_2']))
-    line2.request(consumer='SATA_LINE_2', type=gpiod.LINE_REQ_DIR_OUT)
-    line2.set_value(1)
+    # If the request object already exists, the power is on.
+    if conf.get('sata_power_request'):
+        return
 
+    sata_chip_num = os.environ['SATA_CHIP']
+    sata_chip_path = f'/dev/gpiochip{sata_chip_num}'
+    line1_num = int(os.environ['SATA_LINE_1'])
+    line2_num = int(os.environ['SATA_LINE_2'])
 
-conf = {'disk': [], 'idx': mp.Value('d', -1), 'run': mp.Value('d', 1)}
+    # Configure both lines for OUTPUT, with the value set to ACTIVE (1)
+    config = {
+        line1_num: gpiod.LineSettings(
+            direction=Direction.OUTPUT, output_value=Value.ACTIVE
+        ),
+        line2_num: gpiod.LineSettings(
+            direction=Direction.OUTPUT, output_value=Value.ACTIVE
+        ),
+    }
+
+    # The request object must be stored to keep the lines active.
+    # We store it in our global 'conf' dictionary.
+    conf['sata_power_request'] = gpiod.request_lines(
+        sata_chip_path, consumer="sata-power", config=config
+    )
+
+# --- At the bottom of the file ---
+conf = {'disk': [], 'idx': mp.Value('d', -1), 'run': mp.Value('d', 1), 'sata_power_request': None}
 conf.update(read_conf())

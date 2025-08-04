@@ -1,0 +1,22 @@
+[project]
+name = "rockpi-quad"
+version = "0.1.0"
+dependencies = [
+  "Adafruit-Blinka",
+  "adafruit-circuitpython-busdevice",
+  "adafruit-circuitpython-connectionmanager",
+  "adafruit-circuitpython-framebuf",
+  "adafruit-circuitpython-requests",
+  "adafruit-circuitpython-ssd1306",
+  "adafruit-circuitpython-typing",
+  "Adafruit-PlatformDetect",
+  "Adafruit-PureIO",
+  "pyftdi",
+  "pyserial",
+  "pyusb",
+  "typing-extensions",
+  "libgpiod",
+  "pillow",
+  "spidev",
+  "sysv-ipc",
+]

@@ -14,6 +14,7 @@
       lib = pkgs.lib;
 
       packageOverrides = pkgs.callPackage ./python-packages.nix {};
+
       python = pkgs.python3.override { inherit packageOverrides; };
 
 
@@ -30,7 +31,7 @@
           p.Adafruit-PlatformDetect
           p.Adafruit-PureIO
           p.libgpiod 
-          # p.pillow
+          p.pillow
           p.pyftdi
           p.pyserial
           # p.python-periphery
@@ -203,7 +204,7 @@
         packages = pythonDeps ++ [ 
                      pkgs.git # Add git to clone the repo
                      # Add any other tools you might need, e.g.:
-                     # pkgs.python3Packages.pip 
+                     pkgs.python3Packages.libgpiod
                    ];
 
         # Optional: Set environment variables if needed for testing

@@ -4,6 +4,11 @@
 { pkgs, fetchurl, fetchgit, fetchhg }:
 
 self: super: {
+  pillow = super.pillow.overridePythonAttrs (old: {
+    doCheck = false;
+    doInstallCheck = false;
+  });
+
   "Adafruit-Blinka" = super.buildPythonPackage rec {
     pname = "Adafruit-Blinka";
     version = "8.39.0";
@@ -19,7 +24,7 @@ self: super: {
     propagatedBuildInputs = [
       self."Adafruit-PlatformDetect"
       self."Adafruit-PureIO"
-      # self."adafruit-circuitpython-typing"
+      self."adafruit-circuitpython-typing"
       self."pyftdi"
     ];
   };
@@ -53,10 +58,10 @@ self: super: {
   };
   "adafruit-circuitpython-busdevice" = super.buildPythonPackage rec {
     pname = "adafruit-circuitpython-busdevice";
-    version = "5.2.9";
+    version = "5.2.11";
     src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/07/0d/6d730f9b0867437d701503792988abe663a09c7a3a5fcd98c19ce3c94681/adafruit_circuitpython_busdevice-5.2.9-py3-none-any.whl";
-      sha256 = "07y5pb5q4132vrkfh8ppn2gmr9h81fnavw9r6x7mlydk3ramq93q";
+      url = "https://files.pythonhosted.org/packages/e0/c7/9f0e2b2674cb5b1fb35d067a7585a2a76596a36044264eb390980d428ccf/adafruit_circuitpython_busdevice-5.2.11-py3-none-any.whl";
+      sha256 = "1f44jc6717ngfl7gmcn0lykfvaawaaa5m0ga9l2gf5bax2d9qdyl";
     };
     format = "wheel";
     doCheck = false;
@@ -64,8 +69,8 @@ self: super: {
     checkInputs = [];
     nativeBuildInputs = [];
     propagatedBuildInputs = [
-      # self."Adafruit-Blinka"
-      # self."adafruit-circuitpython-typing"
+      self."Adafruit-Blinka"
+      self."adafruit-circuitpython-typing"
     ];
   };
   "adafruit-circuitpython-connectionmanager" = super.buildPythonPackage rec {
@@ -150,7 +155,7 @@ self: super: {
     propagatedBuildInputs = [
       # self."Adafruit-Blinka"
       # self."adafruit-circuitpython-busdevice"
-      self."adafruit-circuitpython-requests"
+      # self."adafruit-circuitpython-requests"
       self."typing-extensions"
     ];
   };
