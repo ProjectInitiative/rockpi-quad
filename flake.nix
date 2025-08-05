@@ -162,6 +162,15 @@
 
             systemd.services.rockpi-quad = {
               description = "Rockpi Quad SATA Hat Controller";
+              # --- Service Ordering ---
+              # This service must run before local filesystems are mounted.
+              # `local-fs-pre.target` is a systemd target that runs before any
+              # local filesystem mounts are attempted (including mdadm).
+              before = [ "local-fs-pre.target" ];
+              
+              # This service is still wanted by the default multi-user target.
+              # Systemd will resolve the dependency graph and start this service
+              # at the correct time during boot.
               wantedBy = [ "multi-user.target" ];
               after = [ "network.target" ];
 
