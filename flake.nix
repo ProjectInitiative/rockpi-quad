@@ -175,6 +175,15 @@
               after = [ "network.target" ];
 
               serviceConfig = {
+                # --- Service Type ---
+                # Use 'oneshot' to ensure this script finishes completely before
+                # systemd proceeds. This prevents a race condition where mdadm
+                # tries to assemble drives that are not yet powered on.
+                # 'RemainAfterExit' tells systemd to consider the service active
+                # even after the script has exited.
+                Type = "oneshot";
+                RemainAfterExit = true;
+
                 User = "root";
                 Group = "root";
                 # Execute the wrapper script from the package's bin directory
