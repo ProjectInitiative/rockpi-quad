@@ -114,7 +114,7 @@ def read_key(pattern, size):
         while True:
             value = request.get_value(line_num)
             # The regex expects a string of '1's and '0's.
-            s = s[-size:] + str(int(value))
+            s = s[-size:] + str(value.value)
             for t, p in pattern.items():
                 if p.match(s):
                     return t
