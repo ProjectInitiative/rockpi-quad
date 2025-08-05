@@ -92,7 +92,12 @@
         {
           options.hardware.rockpi-quad = {
             enable = lib.mkEnableOption "Enable the Rockpi Quad SATA Hat service";
-            package = lib.mkPackageOption pkgs "rockpi-quad" {};
+            package = lib.mkOption {
+              type = lib.types.package;
+              default = rockpi-quad-pkg;
+              defaultText = lib.literalExpression "config.flake.packages.rockpi-quad";
+              description = "Package providing the Rockpi Quad SATA Hat software.";
+            };
             user = lib.mkOption {
               type = lib.types.str;
               default = "rockpi-quad";
