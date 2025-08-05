@@ -15,7 +15,7 @@ cmds = {
     'blk': "lsblk | awk '{print $1}'",
     'up': "echo Uptime: `uptime | sed 's/.*up \\([^,]*\\), .*/\\1/'`",
     'temp': "cat /sys/class/thermal/thermal_zone0/temp",
-    'ip': "hostname -I | awk '{printf \"IP %s\", $1}'",
+    'ip': "ip route get 1.1.1.1 | awk -v fmt='IP %s' '{printf fmt, $7; exit}'",
     'cpu': "uptime | awk '{printf \"CPU Load: %.2f\", $(NF-2)}'",
     'men': "free -m | awk 'NR==2{printf \"Mem: %s/%sMB\", $3,$2}'",
     'disk': "df -h | awk '$NF==\"/\"{printf \"Disk: %d/%dGB %s\", $3,$2,$5}'"
@@ -114,7 +114,7 @@ def read_key(pattern, size):
         while True:
             value = request.get_value(line_num)
             # The regex expects a string of '1's and '0's.
-            s = s[-size:] + str(int(value))
+            s = s[-size:] + str(value.value)
             for t, p in pattern.items():
                 if p.match(s):
                     return t
