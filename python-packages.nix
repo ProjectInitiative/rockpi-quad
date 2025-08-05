@@ -4,10 +4,115 @@
 { pkgs, fetchurl, fetchgit, fetchhg }:
 
 self: super: {
+
   pillow = super.pillow.overridePythonAttrs (old: {
     doCheck = false;
     doInstallCheck = false;
   });
+
+  # In python-packages.nix
+  "RPi-GPIO" = super.buildPythonPackage rec {
+      pname = "RPi.GPIO";
+      version = "0.7.1";
+      src = fetchurl {
+        url = "https://files.pythonhosted.org/packages/c4/0f/10b524a12b3445af1c607c27b2f5ed122ef55756e29942900e5c950735f2/RPi.GPIO-0.7.1.tar.gz";
+        sha256 = "cd61c4b03c37b62bba4a5acfea9862749c33c618e0295e7e90aa4713fb373b70";
+      };
+      pyproject = true;
+      build-system = [ super.setuptools ];
+
+    #   postPatch = ''
+    #   # This sed command finds the function 'get_rpi_info' in the C source
+    #   # and replaces its entire body with one that always returns success
+    #   # with hardcoded values for a Raspberry Pi 4.
+    #   sed -i '/int get_rpi_info(rpi_info \*info)/,/^}$/c\
+    #   int get_rpi_info(rpi_info *info)\
+    #   {\
+    #       info->p1_revision = 3;\
+    #       strcpy(info->revision, "Pi 4 Model B");\
+    #       strcpy(info->type, "Pi 4 Model B");\
+    #       strcpy(info->manufacturer, "Sony UK");\
+    #       strcpy(info->processor, "BCM2711");\
+    #       strcpy(info->ram, "4G");\
+    #       return 0;\
+    #   }' source/cpuinfo.c
+    # '';
+  };
+
+  "adafruit-circuitpython-busdevice" = super.buildPythonPackage rec {
+    pname = "adafruit-circuitpython-busdevice";
+    version = "5.2.11";
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/e0/c7/9f0e2b2674cb5b1fb35d067a7585a2a76596a36044264eb390980d428ccf/adafruit_circuitpython_busdevice-5.2.11-py3-none-any.whl";
+      sha256 = "1f44jc6717ngfl7gmcn0lykfvaawaaa5m0ga9l2gf5bax2d9qdyl";
+    };
+
+    ################ CUSTOM PATCH ################
+    # see https://github.com/adafruit/Adafruit_CircuitPython_BusDevice/pull/102
+    nativeBuildInputs = [ pkgs.unzip pkgs.zip ];
+
+    postPatch = ''
+      mkdir -p unpacked_wheel
+      unzip -d unpacked_wheel dist/*.whl
+      sed -i '/except ImportError:/{n;s/.*/        DigitalInOut = None/}' unpacked_wheel/adafruit_bus_device/spi_device.py
+    '';
+
+    installPhase = ''
+      runHook preInstall
+      # Correctly determine the site-packages directory for the build's Python
+      install_dir="$out/lib/${pkgs.python3.libPrefix}/site-packages"
+      mkdir -p $install_dir
+      cp -r unpacked_wheel/* $install_dir/
+      runHook postInstall
+    '';
+    ################ CUSTOM PATCH ################
+
+    format = "wheel";
+    doCheck = false;
+    buildInputs = [];
+    checkInputs = [];
+    propagatedBuildInputs = [
+      self."Adafruit-Blinka"
+      self."adafruit-circuitpython-typing"
+    ];
+  };
+
+  "adafruit-circuitpython-ssd1306" = super.buildPythonPackage rec {
+    pname = "adafruit-circuitpython-ssd1306";
+    version = "2.12.17";
+    src = fetchurl {
+      url = "https://files.pythonhosted.org/packages/f1/9e/e5ce66568a2b394286b636dfe08c43f1ed8abbe461383976f54f6afe64d6/adafruit_circuitpython_ssd1306-2.12.17-py3-none-any.whl";
+      sha256 = "01n1wmv8l1qkijfhgc5nwz0hgj4afijzg2n3pr555xypz7ssy8pn";
+    };
+
+    nativeBuildInputs = [ pkgs.unzip ];
+
+    # Unpack to a known directory and patch the file inside it.
+    postPatch = ''
+      mkdir -p unpacked_wheel
+      unzip -d unpacked_wheel $src
+      sed -i '/try:/i import digitalio' unpacked_wheel/adafruit_ssd1306.py
+    '';
+
+    # Custom install phase to copy the patched files from our directory.
+    installPhase = ''
+      runHook preInstall
+      install_dir="$out/lib/${pkgs.python3.libPrefix}/site-packages"
+      mkdir -p $install_dir
+      cp -r unpacked_wheel/* $install_dir/
+      runHook postInstall
+    '';
+
+    format = "wheel";
+    doCheck = false;
+    buildInputs = [];
+    checkInputs = [];
+    propagatedBuildInputs = [
+      self."Adafruit-Blinka"
+      self."adafruit-circuitpython-busdevice"
+      self."adafruit-circuitpython-framebuf"
+    ];
+  };
 
   "Adafruit-Blinka" = super.buildPythonPackage rec {
     pname = "Adafruit-Blinka";
@@ -56,23 +161,6 @@ self: super: {
     nativeBuildInputs = [];
     propagatedBuildInputs = [];
   };
-  "adafruit-circuitpython-busdevice" = super.buildPythonPackage rec {
-    pname = "adafruit-circuitpython-busdevice";
-    version = "5.2.11";
-    src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/e0/c7/9f0e2b2674cb5b1fb35d067a7585a2a76596a36044264eb390980d428ccf/adafruit_circuitpython_busdevice-5.2.11-py3-none-any.whl";
-      sha256 = "1f44jc6717ngfl7gmcn0lykfvaawaaa5m0ga9l2gf5bax2d9qdyl";
-    };
-    format = "wheel";
-    doCheck = false;
-    buildInputs = [];
-    checkInputs = [];
-    nativeBuildInputs = [];
-    propagatedBuildInputs = [
-      self."Adafruit-Blinka"
-      self."adafruit-circuitpython-typing"
-    ];
-  };
   "adafruit-circuitpython-connectionmanager" = super.buildPythonPackage rec {
     pname = "adafruit-circuitpython-connectionmanager";
     version = "3.1.1";
@@ -120,24 +208,6 @@ self: super: {
     propagatedBuildInputs = [
       self."Adafruit-Blinka"
       self."adafruit-circuitpython-connectionmanager"
-    ];
-  };
-  "adafruit-circuitpython-ssd1306" = super.buildPythonPackage rec {
-    pname = "adafruit-circuitpython-ssd1306";
-    version = "2.12.17";
-    src = fetchurl {
-      url = "https://files.pythonhosted.org/packages/f1/9e/e5ce66568a2b394286b636dfe08c43f1ed8abbe461383976f54f6afe64d6/adafruit_circuitpython_ssd1306-2.12.17-py3-none-any.whl";
-      sha256 = "01n1wmv8l1qkijfhgc5nwz0hgj4afijzg2n3pr555xypz7ssy8pn";
-    };
-    format = "wheel";
-    doCheck = false;
-    buildInputs = [];
-    checkInputs = [];
-    nativeBuildInputs = [];
-    propagatedBuildInputs = [
-      self."Adafruit-Blinka"
-      self."adafruit-circuitpython-busdevice"
-      self."adafruit-circuitpython-framebuf"
     ];
   };
   "adafruit-circuitpython-typing" = super.buildPythonPackage rec {

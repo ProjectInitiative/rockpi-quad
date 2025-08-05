@@ -39,6 +39,7 @@
           # p.spidev
           # p.sysv-ipc
           p.typing-extensions
+          p.RPi-GPIO
         ]))
       ];
 
