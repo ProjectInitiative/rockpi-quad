@@ -4,23 +4,19 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     nixos-hardware.url = "github:NixOS/nixos-hardware";
-    # flake-utils is removed
   };
 
-  outputs = { self, nixpkgs,  nixos-hardware }:
+  outputs = { self, nixpkgs, nixos-hardware }:
     let
       system = "aarch64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
       lib = pkgs.lib;
 
       packageOverrides = pkgs.callPackage ./python-packages.nix {};
-
       python = pkgs.python3.override { inherit packageOverrides; };
 
-
-      # Define Python dependencies as a list using the final package set
       pythonDeps = [
-      (python.withPackages(p: [
+        (python.withPackages (p: [
           p.Adafruit-Blinka
           p.adafruit-circuitpython-busdevice
           p.adafruit-circuitpython-connectionmanager
@@ -30,37 +26,43 @@
           p.adafruit-circuitpython-typing
           p.Adafruit-PlatformDetect
           p.Adafruit-PureIO
-          p.libgpiod 
+          p.libgpiod
           p.pillow
           p.pyftdi
           p.pyserial
-          # p.python-periphery
           p.pyusb
-          # p.spidev
-          # p.sysv-ipc
           p.typing-extensions
           p.RPi-GPIO
         ]))
+      ];
+
+      # Define the runtime shell dependencies for the script
+      runtimeShellDeps = with pkgs; [
+        coreutils   # for cat, df
+        util-linux  # for lsblk
+        gawk        # for awk
+        procps      # for uptime, free
+        gnused      # for sed
+        iproute2    # for ip
       ];
 
       # Main package derivation
       rockpi-quad-pkg = pkgs.python3Packages.buildPythonApplication {
         pname = "rockpi-quad";
         version = "0.3.1";
-
         src = ./.;
-
         format = "other";
 
         propagatedBuildInputs = pythonDeps;
-        nativeBuildInputs = [ pkgs.patchelf ];
+        # Add makeWrapper for creating the script wrapper
+        nativeBuildInputs = [ pkgs.patchelf pkgs.makeWrapper ];
 
         installPhase = ''
           runHook preInstall
 
-          install_dir=$out/bin/rockpi-quad
-          mkdir -p $install_dir $out/etc $out/share/fonts/rockpi-quad
-
+          # Install the python application files into a lib directory
+          install_dir=$out/lib/rockpi-quad
+          mkdir -p $install_dir $out/etc
           cp -r $src/rockpi-quad/usr/bin/rockpi-quad/* $install_dir/
           cp $src/rockpi-quad/etc/rockpi-quad.conf $out/etc/rockpi-quad.conf.default
           cp $src/rockpi-quad/usr/bin/rockpi-quad/env/rpi4.env $out/etc/rockpi-quad.env.rpi4
@@ -71,6 +73,10 @@
           chmod +x $install_dir/main.py
           patchShebangs $install_dir
 
+          # Create the executable wrapper in $out/bin
+          makeWrapper $install_dir/main.py $out/bin/rockpi-quad \
+            --prefix PATH : ${lib.makeBinPath runtimeShellDeps}
+
           runHook postInstall
         '';
 
@@ -79,55 +85,43 @@
           homepage = "https://github.com/radxa/rockpi-quad";
           license = lib.licenses.mit;
           maintainers = [ lib.maintainers.none ];
-          platforms = lib.platforms.linux; # Specifically aarch64-linux
+          platforms = lib.platforms.linux;
         };
       };
 
-      # NixOS Module definition (remains mostly the same)
+      # NixOS Module definition
       nixosModule = { config, lib, pkgs, ... }:
         let
           cfg = config.hardware.rockpi-quad;
         in
         {
-
           options.hardware.rockpi-quad = {
             enable = lib.mkEnableOption "Enable the Rockpi Quad SATA Hat service";
-
             package = lib.mkOption {
               type = lib.types.package;
-              # Default now refers directly to the package defined above
               default = rockpi-quad-pkg;
-              defaultText = lib.literalExpression "config.flake.packages.rockpi-quad"; # Example text
+              defaultText = lib.literalExpression "config.flake.packages.rockpi-quad";
               description = "Package providing the Rockpi Quad SATA Hat software.";
             };
-
             user = lib.mkOption {
               type = lib.types.str;
               default = "rockpi-quad";
               description = "User to run the service as.";
             };
-
             group = lib.mkOption {
               type = lib.types.str;
               default = "rockpi-quad";
               description = "Group to run the service as.";
             };
-
             configFile = lib.mkOption {
               type = lib.types.path;
               default = "/etc/rockpi-quad.conf";
               description = "Path to the configuration file.";
             };
-
             settings = lib.mkOption {
               type = lib.types.attrs;
               default = {};
               description = "Settings for rockpi-quad.conf. Merged with defaults.";
-              example = {
-                fan.lv0 = 38;
-                key.press = "reboot";
-                oled."f-temp" = true;
-              };
             };
           };
 
@@ -146,8 +140,6 @@
               SUBSYSTEM=="bcm2835-gpiomem", KERNEL=="gpiomem", GROUP="${cfg.group}", MODE="0660"
               SUBSYSTEM=="gpio", KERNEL=="gpiochip*", ACTION=="add", RUN+="${pkgs.bash}/bin/bash -c 'chown root:${cfg.group} /sys/class/gpio/export /sys/class/gpio/unexport ; chmod 220 /sys/class/gpio/export /sys/class/gpio/unexport'"
               SUBSYSTEM=="gpio", KERNEL=="gpio*", ACTION=="add", RUN+="${pkgs.bash}/bin/bash -c 'chown root:${cfg.group} /sys/%p/active_low /sys/%p/direction /sys/%p/edge /sys/%p/value ; chmod 660 /sys/%p/active_low /sys/%p/direction /sys/%p/edge /sys%p/value'"
-
-                # Add this rule for /dev/gpiochip devices:
               SUBSYSTEM=="gpio", KERNEL=="gpiochip*", GROUP="gpio", MODE="0660"
             '';
 
@@ -174,44 +166,27 @@
               after = [ "network.target" ];
 
               serviceConfig = {
-                # User = cfg.user;
-                # Group = cfg.group;
-                User = "root";  # Add this line
-                Group = "root"; # Add this line
-                ExecStart = "${pkgs.bash}/bin/bash ${cfg.package}/bin/rockpi-quad/main.py";
+                User = "root";
+                Group = "root";
+                # Execute the wrapper script from the package's bin directory
+                ExecStart = "${cfg.package}/bin/rockpi-quad";
                 KillSignal = "SIGINT";
                 EnvironmentFile = "/etc/rockpi-quad.env";
                 Restart = "on-failure";
-                WorkingDirectory = "${cfg.package}/bin/rockpi-quad";
+                # The WorkingDirectory is now the private lib directory
+                WorkingDirectory = "${cfg.package}/lib/rockpi-quad";
+                # The 'path' attribute is no longer needed here!
               };
             };
           };
         };
-
     in {
-      # Expose outputs directly
-      packages.${system}.rockpi-quad = rockpi-quad-pkg; # Keep arch-specific packages structure
-      nixosModules.rockpi-quad = nixosModule;           # Module is generic
-
-      # Add legacyPackages for convenience if needed by non-flake tooling
+      packages.${system}.rockpi-quad = rockpi-quad-pkg;
+      nixosModules.rockpi-quad = nixosModule;
       legacyPackages.${system}.rockpi-quad = rockpi-quad-pkg;
-
-            # Add this devShells output
       devShells.${system}.default = pkgs.mkShell {
-        # Inherit build inputs from the package definition
         nativeBuildInputs = rockpi-quad-pkg.nativeBuildInputs;
-        
-        # Include the core Python environment with dependencies
-        packages = pythonDeps ++ [ 
-                     pkgs.git # Add git to clone the repo
-                     # Add any other tools you might need, e.g.:
-                     pkgs.python3Packages.libgpiod
-                   ];
-
-        # Optional: Set environment variables if needed for testing
-        # shellHook = ''
-        #  export YOUR_ENV_VAR="some_value"
-        # '';
+        packages = pythonDeps ++ runtimeShellDeps ++ [ pkgs.git pkgs.python3Packages.libgpiod ];
       };
     };
 }
