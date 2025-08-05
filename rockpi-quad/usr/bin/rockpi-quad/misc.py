@@ -54,7 +54,7 @@ def read_conf():
 
     try:
         cfg = ConfigParser()
-        cfg.read('/home/kylepzak/rockpi-quad/rockpi-quad/etc/rockpi-quad.conf')
+        cfg.read('/etc/rockpi-quad.conf')
         # cfg.read('/etc/rockpi-penta.conf')
         # fan
         conf['fan']['lv0'] = cfg.getfloat('fan', 'lv0')

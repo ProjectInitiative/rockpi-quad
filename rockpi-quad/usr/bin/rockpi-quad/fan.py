@@ -5,6 +5,7 @@ import traceback
 import threading
 
 import gpiod
+from gpiod.line import Direction, Value
 
 import misc
 
@@ -52,20 +53,32 @@ class Pwm:
 
 class Gpio:
 
-    def tr(self):
-        while True:
-            self.line.set_value(1)
-            time.sleep(self.value[0])
-            self.line.set_value(0)
-            time.sleep(self.value[1])
-
     def __init__(self, period_s):
-        self.line = gpiod.Chip(os.environ['FAN_CHIP']).get_line(int(os.environ['FAN_LINE']))
-        self.line.request(consumer='fan', type=gpiod.LINE_REQ_DIR_OUT)
+        chip_num = os.environ['FAN_CHIP']
+        chip_path = f'/dev/gpiochip{chip_num}'
+        line_num = int(os.environ['FAN_LINE'])
+
+        config = {
+            line_num: gpiod.LineSettings(
+                direction=Direction.OUTPUT
+            )
+        }
+
+        self.request = gpiod.request_lines(
+            chip_path, consumer='fan', config=config
+        )
+
         self.value = [period_s / 2, period_s / 2]
         self.period_s = period_s
         self.thread = threading.Thread(target=self.tr, daemon=True)
         self.thread.start()
+
+    def tr(self):
+        while True:
+            self.request.set_value(int(os.environ['FAN_LINE']), 1)
+            time.sleep(self.value[0])
+            self.request.set_value(int(os.environ['FAN_LINE']), 0)
+            time.sleep(self.value[1])
 
     def write(self, duty):
         self.value[1] = duty * self.period_s

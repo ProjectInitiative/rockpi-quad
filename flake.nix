@@ -60,22 +60,17 @@
         installPhase = ''
           runHook preInstall
 
-          # Install the python application files into a lib directory
-          install_dir=$out/lib/rockpi-quad
-          mkdir -p $install_dir $out/etc
-          cp -r $src/rockpi-quad/usr/bin/rockpi-quad/* $install_dir/
-          cp $src/rockpi-quad/etc/rockpi-quad.conf $out/etc/rockpi-quad.conf.default
-          cp $src/rockpi-quad/usr/bin/rockpi-quad/env/rpi4.env $out/etc/rockpi-quad.env.rpi4
+          install -D -t $out/lib/rockpi-quad $src/rockpi-quad/usr/bin/rockpi-quad/*
+          install -D -t $out/etc $src/rockpi-quad/etc/rockpi-quad.conf
+          install -D -t $out/etc $src/rockpi-quad/usr/bin/rockpi-quad/env/rpi4.env
 
-          substituteInPlace $install_dir/misc.py \
-            --replace "'/etc/rockpi-penta.conf'" "'/etc/rockpi-quad.conf'"
-
-          chmod +x $install_dir/main.py
-          patchShebangs $install_dir
+          chmod +x $out/lib/rockpi-quad/main.py
+          patchShebangs $out/lib/rockpi-quad
 
           # Create the executable wrapper in $out/bin
-          makeWrapper $install_dir/main.py $out/bin/rockpi-quad \
-            --prefix PATH : ${lib.makeBinPath runtimeShellDeps}
+          makeWrapper $out/lib/rockpi-quad/main.py $out/bin/rockpi-quad \
+            --prefix PATH : ${lib.makeBinPath runtimeShellDeps} \
+            --set PYTHONPATH $out/lib/rockpi-quad
 
           runHook postInstall
         '';
@@ -97,12 +92,7 @@
         {
           options.hardware.rockpi-quad = {
             enable = lib.mkEnableOption "Enable the Rockpi Quad SATA Hat service";
-            package = lib.mkOption {
-              type = lib.types.package;
-              default = rockpi-quad-pkg;
-              defaultText = lib.literalExpression "config.flake.packages.rockpi-quad";
-              description = "Package providing the Rockpi Quad SATA Hat software.";
-            };
+            package = lib.mkPackageOption pkgs "rockpi-quad" {};
             user = lib.mkOption {
               type = lib.types.str;
               default = "rockpi-quad";
@@ -137,10 +127,7 @@
             };
 
             services.udev.extraRules = lib.mkDefault ''
-              SUBSYSTEM=="bcm2835-gpiomem", KERNEL=="gpiomem", GROUP="${cfg.group}", MODE="0660"
-              SUBSYSTEM=="gpio", KERNEL=="gpiochip*", ACTION=="add", RUN+="${pkgs.bash}/bin/bash -c 'chown root:${cfg.group} /sys/class/gpio/export /sys/class/gpio/unexport ; chmod 220 /sys/class/gpio/export /sys/class/gpio/unexport'"
-              SUBSYSTEM=="gpio", KERNEL=="gpio*", ACTION=="add", RUN+="${pkgs.bash}/bin/bash -c 'chown root:${cfg.group} /sys/%p/active_low /sys/%p/direction /sys/%p/edge /sys/%p/value ; chmod 660 /sys/%p/active_low /sys/%p/direction /sys/%p/edge /sys%p/value'"
-              SUBSYSTEM=="gpio", KERNEL=="gpiochip*", GROUP="gpio", MODE="0660"
+              SUBSYSTEM=="gpio", KERNEL=="gpiochip*", GROUP="${cfg.group}", MODE="0660"
             '';
 
             environment.etc."rockpi-quad.conf" = {
@@ -158,7 +145,7 @@
               mode = "0644";
             };
 
-            environment.etc."rockpi-quad.env".source = "${cfg.package}/etc/rockpi-quad.env.rpi4";
+            environment.etc."rockpi-quad.env".source = "${cfg.package}/etc/rpi4.env";
 
             systemd.services.rockpi-quad = {
               description = "Rockpi Quad SATA Hat Controller";
@@ -166,16 +153,13 @@
               after = [ "network.target" ];
 
               serviceConfig = {
-                User = "root";
-                Group = "root";
-                # Execute the wrapper script from the package's bin directory
+                User = cfg.user;
+                Group = cfg.group;
                 ExecStart = "${cfg.package}/bin/rockpi-quad";
                 KillSignal = "SIGINT";
                 EnvironmentFile = "/etc/rockpi-quad.env";
                 Restart = "on-failure";
-                # The WorkingDirectory is now the private lib directory
                 WorkingDirectory = "${cfg.package}/lib/rockpi-quad";
-                # The 'path' attribute is no longer needed here!
               };
             };
           };
