@@ -162,8 +162,8 @@
 
             systemd.services.rockpi-quad = {
               description = "Rockpi Quad SATA Hat Controller";
-              wantedBy = [ "multi-user.target" ];
-              after = [ "network.target" ];
+              wantedBy = [ "sysinit.target" ];
+              # after = [ "network.target" ];
 
               serviceConfig = {
                 User = "root";
