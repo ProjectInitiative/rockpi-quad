@@ -1,4 +1,25 @@
 #!/usr/bin/env python3
+import os
+import sys
+
+# Add the script's directory to the python path and load env
+script_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, script_dir)
+
+def load_env_from_file(filepath):
+    if os.path.exists(filepath):
+        with open(filepath) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, value = line.split('=', 1)
+                    os.environ.setdefault(key.strip(), value.strip())
+
+# Load default environment variables for development
+env_file_path = os.path.join(script_dir, 'env', 'rock_pi_4.env')
+load_env_from_file(env_file_path)
+
+
 import queue
 import threading
 import traceback

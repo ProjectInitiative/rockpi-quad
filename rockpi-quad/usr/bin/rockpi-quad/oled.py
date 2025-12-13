@@ -13,11 +13,14 @@ import multiprocessing as mp
 
 import misc
 
+script_dir = os.path.dirname(os.path.abspath(__file__))
+font_path = os.path.join(script_dir, 'fonts', 'DejaVuSansMono-Bold.ttf')
+
 font = {
-    '10': ImageFont.truetype('fonts/DejaVuSansMono-Bold.ttf', 10),
-    '11': ImageFont.truetype('fonts/DejaVuSansMono-Bold.ttf', 11),
-    '12': ImageFont.truetype('fonts/DejaVuSansMono-Bold.ttf', 12),
-    '14': ImageFont.truetype('fonts/DejaVuSansMono-Bold.ttf', 14),
+    '10': ImageFont.truetype(font_path, 10),
+    '11': ImageFont.truetype(font_path, 11),
+    '12': ImageFont.truetype(font_path, 12),
+    '14': ImageFont.truetype(font_path, 14),
 }
 
 

@@ -32,7 +32,6 @@
           p.pyserial
           p.pyusb
           p.typing-extensions
-          p.RPi-GPIO
         ]))
       ];
 
